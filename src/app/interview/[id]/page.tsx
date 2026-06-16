@@ -45,7 +45,11 @@ export default function InterviewPage({
   useEffect(() => {
     fetch(`/api/interviews/${id}`)
       .then(async (res) => {
-        if (!res.ok) throw new Error((await res.json()).error);
+        if (!res.ok) {
+          let message = "서버 오류가 발생했습니다.";
+          try { message = (await res.json()).error ?? message; } catch {}
+          throw new Error(message);
+        }
         return res.json();
       })
       .then((data: Interview) => setInterview(data))

@@ -5,28 +5,34 @@ import { fetchJdText } from "@/lib/parseJd";
 import { generateQuestions } from "@/lib/ai";
 
 export async function GET() {
-  const interviews = await prisma.interview.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 30,
-    select: {
-      id: true,
-      field: true,
-      createdAt: true,
-      questions: {
-        select: { answer: { select: { id: true } } },
+  try {
+    const interviews = await prisma.interview.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      select: {
+        id: true,
+        field: true,
+        createdAt: true,
+        questions: {
+          select: { answer: { select: { id: true } } },
+        },
       },
-    },
-  });
+    });
 
-  const summaries = interviews.map((iv) => ({
-    id: iv.id,
-    field: iv.field,
-    createdAt: iv.createdAt,
-    totalQuestions: iv.questions.length,
-    answeredQuestions: iv.questions.filter((q) => q.answer !== null).length,
-  }));
+    const summaries = interviews.map((iv) => ({
+      id: iv.id,
+      field: iv.field,
+      createdAt: iv.createdAt,
+      totalQuestions: iv.questions.length,
+      answeredQuestions: iv.questions.filter((q) => q.answer !== null).length,
+    }));
 
-  return NextResponse.json(summaries);
+    return NextResponse.json(summaries);
+  } catch (err) {
+    console.error(err);
+    const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {

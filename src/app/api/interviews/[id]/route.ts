@@ -7,23 +7,29 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  try {
+    const { id } = await params;
 
-  const interview = await prisma.interview.findUnique({
-    where: { id },
-    include: {
-      questions: {
-        orderBy: { order: "asc" },
-        include: { answer: true },
+    const interview = await prisma.interview.findUnique({
+      where: { id },
+      include: {
+        questions: {
+          orderBy: { order: "asc" },
+          include: { answer: true },
+        },
       },
-    },
-  });
+    });
 
-  if (!interview) {
-    return NextResponse.json({ error: "면접을 찾을 수 없습니다." }, { status: 404 });
+    if (!interview) {
+      return NextResponse.json({ error: "면접을 찾을 수 없습니다." }, { status: 404 });
+    }
+
+    return NextResponse.json(interview);
+  } catch (err) {
+    console.error(err);
+    const message = err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  return NextResponse.json(interview);
 }
 
 export async function DELETE(

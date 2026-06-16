@@ -28,7 +28,10 @@ export default function HistoryPage() {
 
   useEffect(() => {
     fetch("/api/interviews")
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error("기록을 불러오지 못했습니다.");
+        return res.json();
+      })
       .then((data: InterviewSummary[]) => setHistory(data))
       .catch(() => setError("기록을 불러오지 못했습니다."));
   }, []);
