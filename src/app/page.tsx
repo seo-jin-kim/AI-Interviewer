@@ -42,12 +42,14 @@ export default function Home() {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error ?? "면접 생성에 실패했습니다.");
+        let message = "면접 생성에 실패했습니다.";
+        try { message = (await res.json()).error ?? message; } catch {}
+        throw new Error(message);
       }
 
+      const data = await res.json();
       router.push(`/interview/${data.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
