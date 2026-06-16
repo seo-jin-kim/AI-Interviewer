@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Interview {
+  id         String     @id @default(cuid())
+  field      String
+  resumeText String?
+  jdText     String?
+  jdUrl      String?
+  createdAt  DateTime   @default(now())
+  questions  Question[]
+}
+
+model Question {
+  id          String     @id @default(cuid())
+  interviewId String
+  interview   Interview  @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  text        String
+  order       Int
+  answer      Answer?
+}
+
+model Answer {
+  id             String   @id @default(cuid())
+  questionId     String   @unique
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answerText     String
+  audioPath      String?
+  exampleAnswer  String
+  createdAt      DateTime @default(now())
+}
