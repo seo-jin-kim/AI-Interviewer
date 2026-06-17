@@ -45,10 +45,7 @@ export default function Home() {
 
       if (!res.ok) {
         let message = "면접 생성에 실패했습니다.";
-        try {
-          const text = await res.text();
-          try { message = JSON.parse(text).error ?? message; } catch { message = text.slice(0, 300); }
-        } catch {}
+        try { message = (await res.json()).error ?? message; } catch {}
         throw new Error(message);
       }
 
