@@ -69,12 +69,41 @@ function installDOMMatrixPolyfill() {
 
 export async function parseResumePdf(buffer: Buffer): Promise<string> {
   installDOMMatrixPolyfill();
-  const { PDFParse } = await import("pdf-parse");
-  const parser = new PDFParse({ data: buffer });
-  try {
-    const result = await parser.getText();
-    return result.text.trim();
-  } finally {
-    await parser.destroy();
+
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+  // Point the worker to the file path so Vercel's tracer can locate it.
+  // createObjectURL / Worker are not available in Node.js, so pdfjs falls
+  // back to a fake (inline) worker automatically when loading fails; giving
+  // it the path at least lets it resolve the file from the traced bundle.
+  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    try {
+      const workerPath = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `file://${workerPath}`;
+    } catch {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "";
+    }
   }
+
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(buffer),
+    useSystemFonts: true,
+  });
+
+  const doc = await loadingTask.promise;
+  const pages = doc.numPages;
+  const parts: string[] = [];
+
+  for (let i = 1; i <= pages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    const text = content.items
+      .map((item: { str?: string }) => item.str ?? "")
+      .join(" ");
+    parts.push(text);
+    page.cleanup();
+  }
+
+  await doc.destroy();
+  return parts.join("\n").trim();
 }
